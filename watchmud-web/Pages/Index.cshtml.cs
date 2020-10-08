@@ -35,6 +35,23 @@ namespace WebApplication1.Pages
                 StarredRepositories = await github.Activity.Starring.GetAllForCurrent();
                 Followers = await github.User.Followers.GetAllForCurrent();
                 Following = await github.User.Followers.GetAllFollowingForCurrent();
+                var user = await github.User.Current();
+                // if the user has a public email set, then this shows here:
+                _logger.LogInformation($"user public email is {user.Email}");
+                
+                /* Throws exception because we dont have access to /users/email
+                   (technically returns 404 and a NotFoundException, 
+                   https://github.com/octokit/octokit.net/issues/1010
+                   )
+                 */
+                /*
+                var emails = await github.User.Email.GetAll();
+                _logger.LogInformation($"email count {emails.Count}");
+                foreach(EmailAddress email in emails)
+                {
+                    _logger.LogInformation($"{email.Email} {email.Primary} {email.Verified} {email.Visibility}");
+                }
+                */
             }
         }
     }

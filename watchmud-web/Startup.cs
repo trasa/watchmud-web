@@ -67,8 +67,6 @@ namespace Watchmud.Web
                     options.UserInformationEndpoint = "https://api.github.com/user";
                     options.SaveTokens = true; // make sure tokens are stored after each request finishes 
                     
-                    // this is what we're asking from GitHub - our claim 'scopes'
-                    // user has to agree to give us access to this information / abilities
                     options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
                     options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
                     options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
