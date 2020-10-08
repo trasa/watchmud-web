@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using watchmud_web.Models;
+using Watchmud.Web.Models;
 
-namespace watchmud_web.Controllers
+namespace Watchmud.Web.Controllers
 {
     public class HomeController : Controller
     {

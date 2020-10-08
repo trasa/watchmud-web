@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>watchmud_web</RootNamespace>
+    <RootNamespace>WatchMud.Web</RootNamespace>
     <UserSecretsId>243dbccd-ed07-470c-8792-5bf905724472</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>

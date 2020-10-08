@@ -1,6 +1,6 @@
 using System;
 
-namespace watchmud_web.Models
+namespace Watchmud.Web.Models
 {
     public class ErrorViewModel
     {
