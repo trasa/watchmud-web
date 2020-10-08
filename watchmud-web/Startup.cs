@@ -32,9 +32,13 @@ namespace Watchmud.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            https://www.red-gate.com/simple-talk/dotnet/net-development/oauth-2-0-with-github-in-asp-net-core/
+            /*
+             * example pulled from
+             * https://www.red-gate.com/simple-talk/dotnet/net-development/oauth-2-0-with-github-in-asp-net-core/
+             */
             
             services.AddRazorPages();
+            
             // authenticate via GitHub
             services.AddAuthentication(options =>
                 {
