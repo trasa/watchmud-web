@@ -6,6 +6,7 @@
     <UserSecretsId>243dbccd-ed07-470c-8792-5bf905724472</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="AspNet.Security.OAuth.GitHub" Version="3.1.4" />
     <PackageReference Include="Octokit" Version="0.48.0" />
   </ItemGroup>
   <ItemGroup>

@@ -48,48 +48,21 @@ namespace Watchmud.Web
                     options.DefaultChallengeScheme = "GitHub";
 
                 }).AddCookie()
-                .AddOAuth("GitHub", options =>
+                .AddGitHub(options =>
                 {
                     /*
                      * These are secret!
-                     * 
+                     *
                      * > cd watchmud-web # project directory
                      * > dotnet user-secrets init
                      * > dotnet user-secrets set "GitHub:ClientId" "secretclientid"
                      * > dotnet user-secrets set "GitHub:ClientSecret" "secretsgoeshere"
                      */
+                    options.CallbackPath = new PathString("/github-oauth");
                     options.ClientId = Configuration["GitHub:ClientId"];
                     options.ClientSecret = Configuration["GitHub:ClientSecret"];
-
-                    options.CallbackPath = new PathString("/github-oauth");
-                    options.AuthorizationEndpoint = "https://github.com/login/oauth/authorize";
-                    options.TokenEndpoint = "https://github.com/login/oauth/access_token";
-                    options.UserInformationEndpoint = "https://api.github.com/user";
-                    options.SaveTokens = true; // make sure tokens are stored after each request finishes 
-                    
-                    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
-                    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
-                    options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
-                    options.ClaimActions.MapJsonKey("urn:github:login", "login");
-                    options.ClaimActions.MapJsonKey("urn:github:url", "html_url");
-                    options.ClaimActions.MapJsonKey("urn:github:avatar", "avatar_url");
-                    
-                    options.Events = new OAuthEvents
-                    {
-                        OnCreatingTicket = async context =>
-                        {
-                            var request =
-                                new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
-                            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                            request.Headers.Authorization =
-                                new AuthenticationHeaderValue("Bearer", context.AccessToken);
-                            var response = await context.Backchannel.SendAsync(request,
-                                HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
-                            response.EnsureSuccessStatusCode();
-                            var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-                            context.RunClaimActions(json.RootElement);
-                        }
-                    };
+                    options.SaveTokens = true;
+                    options.Scope.Add("user");
                 });
             
             services.AddControllersWithViews();
@@ -115,7 +88,7 @@ namespace Watchmud.Web
             app.UseRouting();
 
             app.UseAuthentication();
-            // app.UseAuthorization();
+            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

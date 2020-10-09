@@ -43,15 +43,22 @@ namespace WebApplication1.Pages
                    (technically returns 404 and a NotFoundException, 
                    https://github.com/octokit/octokit.net/issues/1010
                    )
+                   UNLESS you add `options.Scope.Add("user");` to the auth configuration
                  */
-                /*
-                var emails = await github.User.Email.GetAll();
-                _logger.LogInformation($"email count {emails.Count}");
-                foreach(EmailAddress email in emails)
+
+                try
                 {
-                    _logger.LogInformation($"{email.Email} {email.Primary} {email.Verified} {email.Visibility}");
+                    var emails = await github.User.Email.GetAll();
+                    _logger.LogInformation($"email count {emails.Count}");
+                    foreach (EmailAddress email in emails)
+                    {
+                        _logger.LogInformation($"email {email.Email} IsPrimary {email.Primary} IsVerified {email.Verified} Visibility {email.Visibility}");
+                    }
                 }
-                */
+                catch (NotFoundException e)
+                {
+                    _logger.LogError(e, "Don't have access to get Users personal information!");
+                }
             }
         }
     }
