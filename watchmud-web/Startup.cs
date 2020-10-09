@@ -61,7 +61,7 @@ namespace Watchmud.Web
                     options.ClientId = Configuration["GitHub:ClientId"];
                     options.ClientSecret = Configuration["GitHub:ClientSecret"];
                     options.SaveTokens = true; // so we can use it later to call for stuff 
-                    options.Scope.Add("user"); // so we can get the user's email (and other private info)
+                    options.Scope.Add("user:email"); // so we can get the user's email 
                 })
                 .AddGoogle(options =>
                 {
