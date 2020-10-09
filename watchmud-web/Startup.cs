@@ -45,7 +45,6 @@ namespace Watchmud.Web
                     // store oauth details via cookies
                     options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                     options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = "GitHub";
 
                 }).AddCookie()
                 .AddGitHub(options =>
@@ -61,8 +60,15 @@ namespace Watchmud.Web
                     options.CallbackPath = new PathString("/github-oauth");
                     options.ClientId = Configuration["GitHub:ClientId"];
                     options.ClientSecret = Configuration["GitHub:ClientSecret"];
-                    options.SaveTokens = true;
-                    options.Scope.Add("user");
+                    options.SaveTokens = true; // so we can use it later to call for stuff 
+                    options.Scope.Add("user"); // so we can get the user's email (and other private info)
+                })
+                .AddGoogle(options =>
+                {
+                    options.CallbackPath = new PathString("/google-oauth");
+                    options.ClientId = Configuration["Google:ClientId"];
+                    options.ClientSecret = Configuration["Google:ClientSecret"];
+                    options.SaveTokens = true; // so we can use it later to call for stuff
                 });
             
             services.AddControllersWithViews();

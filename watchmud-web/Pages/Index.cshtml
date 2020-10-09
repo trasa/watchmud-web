@@ -1,12 +1,16 @@
 ﻿@page
 @model IndexModel
+
 @{
     ViewData["Title"] = "Home page";
 }
 <div class="row">
         @if (!User.Identity.IsAuthenticated)
         {
-            <a asp-action="Login" asp-controller="Auth" class="btn btn-outline-primary">Log In with GitHub</a>
+            <a asp-action="LoginGitHub" asp-controller="Auth" class="btn btn-outline-primary">Log In with GitHub</a>
+            <div class="col-md-4">
+                <a asp-action="LoginGoogle" asp-controller="Auth" class="btn btn-outline-primary btn-google">Google</a>
+            </div> 
         }
         else
         {
@@ -15,73 +19,22 @@
                     <div class="card-header" id="headingOne">
                         <h5 class="mb-0">
                             <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-repos" aria-expanded="true" aria-controls="collapse-repos">
-                                Repos
+                                User Information
                             </button>
                         </h5>
                     </div>
                     <div id="collapse-repos" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
                         <div class="card-body">
                             <ul>
-                                @foreach (var repo in Model.Repositories)
-                                {
-                                    <li><a href="@repo.HtmlUrl">@repo.FullName</a></li>
-                                }
+                                <li>Authentication from: @Model.AuthenticationSource</li>
+                                <li>GitHub User Public Email: @Model.GitHubUserPublicEmail</li>
                             </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header" id="headingTwo">
-                        <h5 class="mb-0">
-                            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapse-starred" aria-expanded="false" aria-controls="collapse-starred">
-                                Starred Repositories
-                            </button>
-                        </h5>
-                    </div>
-                    <div id="collapse-starred" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-                        <div class="card-body">
                             <ul>
-                                @foreach (var repo in Model.StarredRepositories)
+                                @foreach (var email in Model.Emails)
                                 {
-                                    <li><a href="@repo.HtmlUrl">@repo.FullName</a></li>
-                                }
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header" id="headingThree">
-                        <h5 class="mb-0">
-                            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapse-followers" aria-expanded="false" aria-controls="collapse-followers">
-                                Followers
-                            </button>
-                        </h5>
-                    </div>
-                    <div id="collapse-followers" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
-                        <div class="card-body">
-                            <ul>
-                                @foreach (var follower in Model.Followers)
-                                {
-                                    <li><a href="@follower.HtmlUrl">@follower.Login</a></li>
-                                }
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header" id="headingFour">
-                        <h5 class="mb-0">
-                            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapse-following" aria-expanded="false" aria-controls="collapse-following">
-                                Following
-                            </button>
-                        </h5>
-                    </div>
-                    <div id="collapse-following" class="collapse" aria-labelledby="headingFour" data-parent="#accordion">
-                        <div class="card-body">
-                            <ul>
-                                @foreach (var follower in Model.Followers)
-                                {
-                                    <li><a href="@follower.HtmlUrl">@follower.Login</a></li>
+                                    <li>
+                                        @email
+                                    </li>
                                 }
                             </ul>
                         </div>

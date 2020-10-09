@@ -11,18 +11,27 @@ using Octokit.Internal;
 
 namespace WebApplication1.Pages
 {
+    public class EmailModel {
+        public string Email { get; set; }
+        public bool Verified { get; set; }
+        public bool Primary { get; set; }
+        public string Visibility { get; set; }
+
+        public override string ToString()
+        {
+            return $@"{this.Email} - Verified: {Verified} - Primary: {Primary} - Visibility: {Visibility}";
+        }
+    }
     public class IndexModel : PageModel
     {
-        private readonly ILogger<IndexModel> _logger;
-        
-        public IReadOnlyList<Repository> Repositories { get; set; }
-        public IReadOnlyList<Repository> StarredRepositories { get; set; }
-        public IReadOnlyList<User> Followers { get; set; }
-        public IReadOnlyList<User> Following { get; set; }
+        private readonly ILogger<IndexModel> logger;
+        public string GitHubUserPublicEmail { get; set; }
+        public IEnumerable<EmailModel> Emails { get; set; }
+        public string AuthenticationSource { get; set; }
 
         public IndexModel(ILogger<IndexModel> logger)
         {
-            _logger = logger;
+            this.logger = logger;
         }
 
         public async Task OnGetAsync()
@@ -30,36 +39,46 @@ namespace WebApplication1.Pages
             if (User.Identity.IsAuthenticated)
             {
                 string accessToken = await HttpContext.GetTokenAsync("access_token");
-                var github = new GitHubClient(new ProductHeaderValue("AspNetCoreGitHubAuth"), new InMemoryCredentialStore(new Credentials(accessToken)));
-                Repositories = await github.Repository.GetAllForCurrent();
-                StarredRepositories = await github.Activity.Starring.GetAllForCurrent();
-                Followers = await github.User.Followers.GetAllForCurrent();
-                Following = await github.User.Followers.GetAllFollowingForCurrent();
-                var user = await github.User.Current();
-                // if the user has a public email set, then this shows here:
-                _logger.LogInformation($"user public email is {user.Email}");
-                
-                /* Throws exception because we dont have access to /users/email
-                   (technically returns 404 and a NotFoundException, 
-                   https://github.com/octokit/octokit.net/issues/1010
-                   )
-                   UNLESS you add `options.Scope.Add("user");` to the auth configuration
-                 */
-
-                try
+                AuthenticationSource = User.Identity.AuthenticationType;
+                if (User.Identity.AuthenticationType == "GitHub")
                 {
-                    var emails = await github.User.Email.GetAll();
-                    _logger.LogInformation($"email count {emails.Count}");
-                    foreach (EmailAddress email in emails)
-                    {
-                        _logger.LogInformation($"email {email.Email} IsPrimary {email.Primary} IsVerified {email.Verified} Visibility {email.Visibility}");
-                    }
-                }
-                catch (NotFoundException e)
+                    await GitHubAsync(accessToken);
+                } else if (User.Identity.AuthenticationType == "Google")
                 {
-                    _logger.LogError(e, "Don't have access to get Users personal information!");
+                    GoogleAsync(accessToken);
                 }
             }
+        }
+
+        private async Task GitHubAsync(string accessToken)
+        {
+            var github = new GitHubClient(new ProductHeaderValue("AspNetCoreGitHubAuth"),
+                new InMemoryCredentialStore(new Credentials(accessToken)));
+            // Repositories = await github.Repository.GetAllForCurrent();
+            // StarredRepositories = await github.Activity.Starring.GetAllForCurrent();
+            // Followers = await github.User.Followers.GetAllForCurrent();
+            // Following = await github.User.Followers.GetAllFollowingForCurrent();
+            var user = await github.User.Current();
+            // if the user has a public email set, then this shows here:
+            logger.LogInformation($"user github public email is {user.Email}");
+            GitHubUserPublicEmail = user.Email;
+
+            var emails = await github.User.Email.GetAll();
+            logger.LogInformation($"email count {emails.Count}");
+            Emails = from email in emails
+                select new EmailModel
+                {
+                    Email = email.Email,
+                    Verified = email.Verified,
+                    Primary = email.Primary,
+                    Visibility = email.Visibility.ToString() ?? "null"
+                };
+        }
+
+        private void GoogleAsync(string accessToken)
+        {
+            logger.LogInformation("do google async here");
+            GitHubUserPublicEmail = "google auth stuff here";
         }
     }
 }

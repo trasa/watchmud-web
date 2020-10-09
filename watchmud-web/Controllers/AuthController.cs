@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Watchmud.Web.Controllers
@@ -7,12 +8,21 @@ namespace Watchmud.Web.Controllers
     public class AuthController : Controller
     {
         [HttpGet]
-        public IActionResult Login(string returnUri = "/")
+        public IActionResult LoginGoogle(string returnUri = "/")
         {
             return Challenge(new AuthenticationProperties
             {
-                RedirectUri = returnUri
-            });
+                RedirectUri = returnUri,
+            }, "Google");
+        }
+        
+        [HttpGet]
+        public IActionResult LoginGitHub(string returnUri = "/")
+        {
+            return Challenge(new AuthenticationProperties
+            {
+                RedirectUri = returnUri,
+            }, "GitHub");
         }
     }
 }
