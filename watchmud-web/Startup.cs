@@ -69,6 +69,15 @@ namespace Watchmud.Web
                     options.ClientId = Configuration["Google:ClientId"];
                     options.ClientSecret = Configuration["Google:ClientSecret"];
                     options.SaveTokens = true; // so we can use it later to call for stuff
+                })
+                .AddFacebook(options =>
+                {
+                    options.CallbackPath = new PathString("/signin-facebook");
+                    options.AppId = Configuration["Facebook:ClientId"];
+                    options.AppSecret = Configuration["Facebook:ClientSecret"];
+                    options.SaveTokens = true; // so we can use it later to call for stuff
+                    options.Scope.Add("email");
+                    options.AccessDeniedPath = "/AccessDeniedPathInfo";
                 });
             
             services.AddControllersWithViews();

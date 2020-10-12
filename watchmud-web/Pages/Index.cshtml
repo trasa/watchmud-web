@@ -8,10 +8,15 @@
         @if (!User.Identity.IsAuthenticated)
         {
             <!-- TODO make these look all official like... -->
-            <a asp-action="LoginGitHub" asp-controller="Auth" class="btn btn-outline-primary">Log In with GitHub</a>
-            <div class="col-md-4">
+            <div class="col-md-2">
+                <a asp-action="LoginGitHub" asp-controller="Auth" class="btn btn-outline-primary">Log In with GitHub</a>
+            </div>
+            <div class="col-md-2">
                 <a asp-action="LoginGoogle" asp-controller="Auth" class="btn btn-outline-primary btn-google">Log In with Google</a>
-            </div> 
+            </div>
+            <div class="col-md-2">
+                <a asp-action="LoginFacebook" asp-controller="Auth" class="btn btn-outline-primary btn-google">Log In with Facebook</a>
+            </div>
         }
         else
         {
@@ -29,6 +34,7 @@
                             <ul>
                                 <li>Authentication from: @Model.AuthenticationSource</li>
                                 <li>User Public Email: @Model.UserPublicEmail</li>
+                                <li>Claimed Email: @Model.ClaimedEmail</li>
                             </ul>
                             <ul>
                                 @foreach (var email in Model.Emails)

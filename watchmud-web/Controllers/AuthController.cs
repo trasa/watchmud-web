@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Watchmud.Web.Controllers
@@ -23,6 +22,15 @@ namespace Watchmud.Web.Controllers
             {
                 RedirectUri = returnUri,
             }, "GitHub");
+        }
+
+        [HttpGet]
+        public IActionResult LoginFacebook(string returnUri = "/")
+        {
+            return Challenge(new AuthenticationProperties
+            {
+                RedirectUri = returnUri,
+            }, "Facebook");
         }
     }
 }

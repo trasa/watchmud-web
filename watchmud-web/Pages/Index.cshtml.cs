@@ -1,57 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Security.Cryptography;
-using System.Text;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Http;
+using Facebook;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Octokit;
 using Octokit.Internal;
+using Watchmud.Web.Models;
 
 namespace WebApplication1.Pages
 {
-    /*
-     * res: {
-"id": "102171105725265301028",
-"email": "trasa@meancat.com",
-"verified_email": true,
-"name": "Tony Rasa",
-"given_name": "Tony",
-"family_name": "Rasa",
-"link": "https://plus.google.com/102171105725265301028",
-"picture": "https://lh3.googleusercontent.com/a-/AOh14GhjQ9PK4zNgPtf8jPFLdPKIXKksetebiqAYVnnTzg=s96-c",
-"gender": "male",
-"locale": "en",
-"hd": "meancat.com"
-}
-     */
-    public class GoogleUserInfo
-    {
-        public string Id { get; set; }
-        public string Email { get; set;}
-        
-        [JsonProperty("verified_email")]
-        public bool VerifiedEmail { get; set; }
-        
-        public string Name { get; set; }
-        public string GivenName { get; set; }
-        public string FamilyName { get; set; }
-        public string Link { get; set; }
-        public string Picture { get; set; }
-        public string Gender { get; set; }
-        public string Locale { get; set; }
-        public string HD { get; set; }
-    }
-    
-    
     public class EmailModel {
         public string Email { get; set; }
         public bool Verified { get; set; }
@@ -63,10 +27,12 @@ namespace WebApplication1.Pages
             return $@"{this.Email} - Verified: {Verified} - Primary: {Primary} - Visibility: {Visibility}";
         }
     }
+
     public class IndexModel : PageModel
     {
         private readonly ILogger<IndexModel> logger;
         public string UserPublicEmail { get; set; }
+        public String ClaimedEmail { get; set; }
         public IEnumerable<EmailModel> Emails { get; set; }
         public string AuthenticationSource { get; set; }
 
@@ -81,18 +47,29 @@ namespace WebApplication1.Pages
             {
                 string accessToken = await HttpContext.GetTokenAsync("access_token");
                 this.AuthenticationSource = User.Identity.AuthenticationType;
-                if (User.Identity.AuthenticationType == "GitHub")
+                ClaimedEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+
+                switch (User.Identity.AuthenticationType)
                 {
-                    await GitHubAsync(accessToken);
-                } else if (User.Identity.AuthenticationType == "Google")
-                {
-                    await GoogleAsync(accessToken);
+                    case "GitHub":
+                        await GitHubAsync(accessToken);
+                        break;
+                    case "Google":
+                        await GoogleAsync(accessToken);
+                        break;
+                    case "Facebook":
+                        await FacebookAsync(accessToken);
+                        break;
                 }
             }
         }
 
         private async Task GitHubAsync(string accessToken)
         {
+            // can the user info be safely retrieved via User.Claims?
+            // -- looks like only the Public Email is included as a claim, and that value
+            //    is optional for the user to set (they don't have to specify a public email)
+            
             var github = new GitHubClient(new ProductHeaderValue("AspNetCoreGitHubAuth"),
                 new InMemoryCredentialStore(new Credentials(accessToken)));
             // Repositories = await github.Repository.GetAllForCurrent();
@@ -118,15 +95,19 @@ namespace WebApplication1.Pages
 
         private async Task GoogleAsync(string accessToken)
         {
+            // TODO can all this be done with claims?
             // TODO use dependency injection
+
             using (var client = new HttpClient())
             {
                 // I couldn't find a way to do this call from within the Google C# Lib and
                 // avoid using HttpClient and JSON deserialization. It's likely that there's 
                 // already a helper method somewhere that does this...
-                // Elsewise this should be wrapped into some sort of helper service and use
+                // Otherwise this should be wrapped into some sort of helper service and use
                 // DI and all that other good stuff.
-                string json = await client.GetStringAsync("https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + accessToken);
+                string json =
+                    await client.GetStringAsync("https://www.googleapis.com/oauth2/v1/userinfo?access_token=" +
+                                                accessToken);
                 GoogleUserInfo userInfo = JsonConvert.DeserializeObject<GoogleUserInfo>(json);
                 UserPublicEmail = userInfo.Email;
                 Emails = new List<EmailModel>
@@ -139,6 +120,44 @@ namespace WebApplication1.Pages
                         Visibility = "N/A",
                     }
                 };
+            }
+        }
+
+        private async Task FacebookAsync(string accessToken)
+        {
+            // Facebook is a bit different because it allows the user
+            // to override which permissions are given to you, and still 
+            // complete the login to the FB App. So we ASK for the email,
+            // but that doesn't mean we'll actually get it...
+            var client = new FacebookClient(accessToken);
+            
+            // two choices here: if we don't get "email" back, assume that the permission has been declined
+            // or, call /me/permissions and examine the set of permissions that was returned...
+            dynamic userInfo = await client.GetTaskAsync("/me?fields=id,name,email");
+            
+            // {"data":[{"permission":"public_profile","status":"granted"},{"permission":"email","status":"declined"}]}
+            dynamic perms = await client.GetTaskAsync("/me/permissions");
+            string permsStr = perms.ToString();
+            var permObj = JsonConvert.DeserializeObject<FacebookData<FacebookPermission>>(permsStr);
+            bool hasEmailPermission = permObj.Data.Any(p => p.Granted && p.Permission == "email");
+
+            if (hasEmailPermission)
+            {
+                UserPublicEmail = userInfo.email;
+                Emails = new List<EmailModel>
+                {
+                    new EmailModel
+                    {
+                        Email = userInfo.email,
+                        Visibility = "N/A",
+                    }
+                };
+            }
+            else
+            {
+                // redirect to login-fail, or something...
+                UserPublicEmail = "Email permission denied!";
+                Emails = new List<EmailModel>();
             }
         }
     }
