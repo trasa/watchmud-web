@@ -7,9 +7,10 @@
 <div class="row">
         @if (!User.Identity.IsAuthenticated)
         {
+            <!-- TODO make these look all official like... -->
             <a asp-action="LoginGitHub" asp-controller="Auth" class="btn btn-outline-primary">Log In with GitHub</a>
             <div class="col-md-4">
-                <a asp-action="LoginGoogle" asp-controller="Auth" class="btn btn-outline-primary btn-google">Google</a>
+                <a asp-action="LoginGoogle" asp-controller="Auth" class="btn btn-outline-primary btn-google">Log In with Google</a>
             </div> 
         }
         else
@@ -27,7 +28,7 @@
                         <div class="card-body">
                             <ul>
                                 <li>Authentication from: @Model.AuthenticationSource</li>
-                                <li>GitHub User Public Email: @Model.GitHubUserPublicEmail</li>
+                                <li>User Public Email: @Model.UserPublicEmail</li>
                             </ul>
                             <ul>
                                 @foreach (var email in Model.Emails)
