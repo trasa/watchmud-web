@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Facebook;
+using Google.Apis.Auth;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -95,32 +97,20 @@ namespace WebApplication1.Pages
 
         private async Task GoogleAsync(string accessToken)
         {
-            // TODO can all this be done with claims?
             // TODO use dependency injection
+            var payload = await GoogleJsonWebSignature.ValidateAsync(accessToken);
 
-            using (var client = new HttpClient())
+            UserPublicEmail = payload.Email;
+            Emails = new List<EmailModel>
             {
-                // I couldn't find a way to do this call from within the Google C# Lib and
-                // avoid using HttpClient and JSON deserialization. It's likely that there's 
-                // already a helper method somewhere that does this...
-                // Otherwise this should be wrapped into some sort of helper service and use
-                // DI and all that other good stuff.
-                string json =
-                    await client.GetStringAsync("https://www.googleapis.com/oauth2/v1/userinfo?access_token=" +
-                                                accessToken);
-                GoogleUserInfo userInfo = JsonConvert.DeserializeObject<GoogleUserInfo>(json);
-                UserPublicEmail = userInfo.Email;
-                Emails = new List<EmailModel>
+                new EmailModel
                 {
-                    new EmailModel
-                    {
-                        Email = userInfo.Email,
-                        Verified = userInfo.VerifiedEmail,
-                        Primary = true,
-                        Visibility = "N/A",
-                    }
-                };
-            }
+                    Email = payload.Email,
+                    Verified = payload.EmailVerified,
+                    Primary = true,
+                    Visibility = "N/A",
+                }
+            };
         }
 
         private async Task FacebookAsync(string accessToken)
