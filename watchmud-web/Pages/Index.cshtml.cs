@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Facebook;
 using Google.Apis.Auth;
@@ -34,7 +35,7 @@ namespace WebApplication1.Pages
     {
         private readonly ILogger<IndexModel> logger;
         public string UserPublicEmail { get; set; }
-        public String ClaimedEmail { get; set; }
+        public string ClaimedEmail { get; set; }
         public IEnumerable<EmailModel> Emails { get; set; }
         public string AuthenticationSource { get; set; }
 
@@ -61,6 +62,9 @@ namespace WebApplication1.Pages
                         break;
                     case "Facebook":
                         await FacebookAsync(accessToken);
+                        break;
+                    case "Epic":
+                        EpicAsync(accessToken);
                         break;
                 }
             }
@@ -149,6 +153,18 @@ namespace WebApplication1.Pages
                 UserPublicEmail = "Email permission denied!";
                 Emails = new List<EmailModel>();
             }
+        }
+
+        private void EpicAsync(string accessToken)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var c in User.Claims)
+            {
+                sb.AppendJoin("=", c.Type, c.Value);
+            }
+
+            UserPublicEmail = sb.ToString();
+            Emails = new List<EmailModel>();
         }
     }
 }

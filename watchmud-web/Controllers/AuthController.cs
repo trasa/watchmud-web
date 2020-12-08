@@ -32,5 +32,13 @@ namespace Watchmud.Web.Controllers
                 RedirectUri = returnUri,
             }, "Facebook");
         }
+        [HttpGet]
+        public IActionResult LoginEpic(string returnUri = "/")
+        {
+            return Challenge(new AuthenticationProperties
+            {
+                RedirectUri = returnUri,
+            }, "Epic");
+        }
     }
 }

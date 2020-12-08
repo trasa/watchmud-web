@@ -17,6 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Watchmud.Web.Services;
 
 namespace Watchmud.Web
 {
@@ -78,6 +79,13 @@ namespace Watchmud.Web
                     options.SaveTokens = true; // so we can use it later to call for stuff
                     options.Scope.Add("email");
                     options.AccessDeniedPath = "/AccessDeniedPathInfo";
+                })
+                .AddEpic(options =>
+                {
+                    options.CallbackPath = new PathString("/signin-epic");
+                    options.ClientId = Configuration["Epic:ClientId"];
+                    options.ClientSecret = Configuration["Epic:ClientSecret"];
+                    options.SaveTokens = true; 
                 });
             
             services.AddControllersWithViews();
@@ -97,7 +105,20 @@ namespace Watchmud.Web
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            // app.UseHttpsRedirection();
+            
+            // ngrok doesn't supply forwarded headers :(
+            // app.UseForwardedHeaders();
+            app.Use((context, next) =>
+            {
+                // so here's a hack to set our request host to be our ngrok host, which changes
+                // each time ngrok is restarted (unless I pay them)
+                // LogDebugHeaders(context);
+                context.Request.Scheme = "https";
+                context.Request.Host = HostString.FromUriComponent("fc1f2a4247b7.ngrok.io");
+                return next();
+            });
+            
             app.UseStaticFiles();
 
             app.UseRouting();
