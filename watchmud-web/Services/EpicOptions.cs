@@ -19,7 +19,6 @@ namespace Watchmud.Web.Services
             Scope.Add("presence");
             Scope.Add("friends_list");
 
-            // ClaimActions.MapJsonKey();
             ClaimActions.MapJsonKey("accountId", "sub");
             ClaimActions.MapJsonKey("userName", "preferred_username");
         }
