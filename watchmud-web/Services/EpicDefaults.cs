@@ -1,6 +1,6 @@
 ﻿namespace Watchmud.Web.Services
 {
-    public class EpicDefaults
+    public static class EpicDefaults
     {
         public const string AuthenticationScheme = "Epic";
 

@@ -113,9 +113,8 @@ namespace Watchmud.Web
             {
                 // so here's a hack to set our request host to be our ngrok host, which changes
                 // each time ngrok is restarted (unless I pay them)
-                // LogDebugHeaders(context);
-                context.Request.Scheme = "https";
-                context.Request.Host = HostString.FromUriComponent("fc1f2a4247b7.ngrok.io");
+                // context.Request.Scheme = "https";
+                // context.Request.Host = HostString.FromUriComponent("50cfcbe16af8.ngrok.io");
                 return next();
             });
             

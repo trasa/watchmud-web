@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -18,27 +17,25 @@ namespace Watchmud.Web.Services
     //  ~/bin/ngrok http https://localhost:11010 -host-header="localhost:11010"
     //  ~/bin/ngrok http http://localhost:11000 -host-header=rewrite
     
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class EpicHandler : OAuthHandler<EpicOptions>
     {
         public EpicHandler(IOptionsMonitor<EpicOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
         {
         }
 
-        protected override Task<HandleRequestResult> HandleRemoteAuthenticateAsync()
-        {
-            return base.HandleRemoteAuthenticateAsync();
-        }
-
         protected override async Task<OAuthTokenResponse> ExchangeCodeAsync(OAuthCodeExchangeContext context)
         {
+            // for epic, must pass in list of scopes in tokenRequest form body,
+            // AND they must match the permissions list in the Application Permissions 
+            // EXACTLY, or you get errors about how you don't have permission to view
+            // the scope. Even if you're asking for LESS scope.
             var tokenRequestParameters = new Dictionary<string, string>()
             {
-                { "client_id", Options.ClientId },
                 { "redirect_uri", context.RedirectUri },
-                { "client_secret", Options.ClientSecret },
                 { "code", context.Code },
                 { "grant_type", "authorization_code" },
-                { "scopes", string.Join(" ", Options.Scope) } // <-- this part is different too
+                { "scopes", string.Join(" ", Options.Scope) } // <-- important!
             };
 
             // PKCE https://tools.ietf.org/html/rfc7636#section-4.5, see BuildChallengeUrl
@@ -52,10 +49,12 @@ namespace Watchmud.Web.Services
 
             var requestMessage = new HttpRequestMessage(HttpMethod.Post, Options.TokenEndpoint);
             requestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            // This next line is the thing that's different!
+            
+            // Epic requires passing in ClientId and ClientSecret via Authorization Header,
+            // instead of in the form body.
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", 
                 Convert.ToBase64String(Encoding.UTF8.GetBytes(Options.ClientId + ":" + Options.ClientSecret)));
-            /// ^^^^^^
+
             requestMessage.Content = requestContent;
             var response = await Backchannel.SendAsync(requestMessage, Context.RequestAborted);
             if (response.IsSuccessStatusCode)
@@ -74,7 +73,7 @@ namespace Watchmud.Web.Services
         {
             var output = new StringBuilder();
             output.Append("Status: " + response.StatusCode + ";");
-            output.Append("Headers: " + response.Headers.ToString() + ";");
+            output.Append("Headers: " + response.Headers + ";");
             output.Append("Body: " + await response.Content.ReadAsStringAsync() + ";");
             return output.ToString();
         }

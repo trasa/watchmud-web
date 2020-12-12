@@ -11,7 +11,7 @@ namespace Watchmud.Web.Services
     {
         public EpicOptions()
         {
-            CallbackPath = new PathString("/signin-facebook");
+            CallbackPath = new PathString("/signin-epic");
             AuthorizationEndpoint = EpicDefaults.AuthorizationEndpoint;
             TokenEndpoint = EpicDefaults.TokenEndpoint;
             UserInformationEndpoint = EpicDefaults.UserInformationEndpoint; 
