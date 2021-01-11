@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -9,50 +10,41 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Watchmud.Web.Services
 {
-    //  ~/bin/ngrok http https://localhost:11010 -host-header="localhost:11010"
-    //  ~/bin/ngrok http http://localhost:11000 -host-header=rewrite
-    
     // ReSharper disable once ClassNeverInstantiated.Global
-    public class EpicHandler : OAuthHandler<EpicOptions>
+    public class TwitchHandler : OAuthHandler<TwitchOptions>
     {
-        public EpicHandler(IOptionsMonitor<EpicOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
+        public TwitchHandler(IOptionsMonitor<TwitchOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
         {
         }
 
+
         protected override async Task<OAuthTokenResponse> ExchangeCodeAsync(OAuthCodeExchangeContext context)
         {
-            // for epic, must pass in list of scopes in tokenRequest form body,
-            // AND they must match the permissions list in the Application Permissions 
-            // EXACTLY, or you get errors about how you don't have permission to view
-            // the scope. Even if you're asking for LESS scope.
-            var tokenRequestParameters = new Dictionary<string, string>()
+
+            var parameters = new Dictionary<string, string>()
             {
-                { "redirect_uri", context.RedirectUri },
-                { "code", context.Code },
-                { "grant_type", "authorization_code" },
-                { "scopes", string.Join(" ", Options.Scope) } // <-- important!
+                {"client_id", Options.ClientId},
+                {"client_secret", Options.ClientSecret},
+                {"redirect_uri", context.RedirectUri},
+                {"grant_type", "authorization_code"},
+                {"code", context.Code},
+                {"scope", string.Join(" ", Options.Scope)}
             };
 
-            var requestContent = new FormUrlEncodedContent(tokenRequestParameters);
-
-            var requestMessage = new HttpRequestMessage(HttpMethod.Post, Options.TokenEndpoint);
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, QueryHelpers.AddQueryString(Options.TokenEndpoint, parameters));
             requestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            
-            // Epic requires passing in ClientId and ClientSecret via Authorization Header,
-            // instead of in the form body.
-            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Basic", 
-                Convert.ToBase64String(Encoding.UTF8.GetBytes(Options.ClientId + ":" + Options.ClientSecret)));
 
-            requestMessage.Content = requestContent;
             var response = await Backchannel.SendAsync(requestMessage, Context.RequestAborted);
             if (response.IsSuccessStatusCode)
             {
-                var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                string body = new StreamReader(await response.Content.ReadAsStreamAsync()).ReadToEnd(); // TODO merge into next line
+                var payload = JsonDocument.Parse(body);
                 return OAuthTokenResponse.Success(payload);
             }
             else
@@ -61,6 +53,7 @@ namespace Watchmud.Web.Services
                 return OAuthTokenResponse.Failed(new Exception(error));
             }
         }
+        
         
         private static async Task<string> Display(HttpResponseMessage response)
         {
@@ -78,7 +71,7 @@ namespace Watchmud.Web.Services
         {
             var request = new HttpRequestMessage(HttpMethod.Get, Options.UserInformationEndpoint);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
-
+            request.Headers.Add("Client-Id", Options.ClientId);
             var response = await Backchannel.SendAsync(request, Context.RequestAborted);
             if (!response.IsSuccessStatusCode)
             {
@@ -87,7 +80,14 @@ namespace Watchmud.Web.Services
 
             using (var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync()))
             {
-                var context = new OAuthCreatingTicketContext(new ClaimsPrincipal(identity), properties, Context, Scheme, Options, Backchannel, tokens, payload.RootElement);
+                // payload:
+                //   { "data": [ {
+                //                "id": "1234", (etc)
+                //               }
+                //             ] 
+                //    }
+                JsonElement userData = payload.RootElement.GetProperty("data")[0];
+                var context = new OAuthCreatingTicketContext(new ClaimsPrincipal(identity), properties, Context, Scheme, Options, Backchannel, tokens, userData);
                 context.RunClaimActions();
                 await Events.CreatingTicket(context);
                 return new AuthenticationTicket(context.Principal, context.Properties, Scheme.Name);

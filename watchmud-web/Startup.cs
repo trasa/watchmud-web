@@ -86,6 +86,13 @@ namespace Watchmud.Web
                     options.ClientId = Configuration["Epic:ClientId"];
                     options.ClientSecret = Configuration["Epic:ClientSecret"];
                     options.SaveTokens = true; 
+                })
+                .AddTwitch(options =>
+                {
+                    options.CallbackPath = new PathString("/signin-twitch");
+                    options.ClientId = Configuration["Twitch:ClientId"];
+                    options.ClientSecret = Configuration["Twitch:ClientSecret"];
+                    options.SaveTokens = true;
                 });
             
             services.AddControllersWithViews();

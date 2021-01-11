@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Facebook;
 using Google.Apis.Auth;
-using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -36,6 +32,7 @@ namespace WebApplication1.Pages
         private readonly ILogger<IndexModel> logger;
         public string UserPublicEmail { get; set; }
         public string ClaimedEmail { get; set; }
+        public string RawClaims { get; set; }
         public IEnumerable<EmailModel> Emails { get; set; }
         public string AuthenticationSource { get; set; }
 
@@ -65,6 +62,9 @@ namespace WebApplication1.Pages
                         break;
                     case "Epic":
                         EpicAsync(accessToken);
+                        break;
+                    case "Twitch":
+                        TwitchAsync(accessToken);
                         break;
                 }
             }
@@ -164,6 +164,19 @@ namespace WebApplication1.Pages
             }
 
             UserPublicEmail = sb.ToString();
+            Emails = new List<EmailModel>();
+        }
+
+        private void TwitchAsync(string accessToken)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var c in User.Claims)
+            {
+                sb.AppendJoin("=", c.Type, c.Value);
+            }
+
+            RawClaims = sb.ToString();
+            UserPublicEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
             Emails = new List<EmailModel>();
         }
     }

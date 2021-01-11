@@ -20,6 +20,9 @@
             <div class="col-md-2">
                 <a asp-action="LoginEpic" asp-controller="Auth" class="btn btn-outline-primary btn-google">Log In with Epic</a>
             </div>
+            <div class="col-md-2">
+                <a asp-action="LoginTwitch" asp-controller="Auth" class="btn btn-outline-primary btn-google">Log In with Twitch</a>
+            </div>
         }
         else
         {
@@ -38,6 +41,7 @@
                                 <li>Authentication from: @Model.AuthenticationSource</li>
                                 <li>User Public Email: @Model.UserPublicEmail</li>
                                 <li>Claimed Email: @Model.ClaimedEmail</li>
+                                <li>Raw Claims: @Model.RawClaims</li>
                             </ul>
                             <ul>
                                 @foreach (var email in Model.Emails)
