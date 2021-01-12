@@ -78,20 +78,18 @@ namespace Watchmud.Web.Services
                 throw new HttpRequestException($"An error occurred when retrieving user information ({response.StatusCode}). Please check if the authentication information is correct.");
             }
 
-            using (var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync()))
-            {
-                // payload:
-                //   { "data": [ {
-                //                "id": "1234", (etc)
-                //               }
-                //             ] 
-                //    }
-                JsonElement userData = payload.RootElement.GetProperty("data")[0];
-                var context = new OAuthCreatingTicketContext(new ClaimsPrincipal(identity), properties, Context, Scheme, Options, Backchannel, tokens, userData);
-                context.RunClaimActions();
-                await Events.CreatingTicket(context);
-                return new AuthenticationTicket(context.Principal, context.Properties, Scheme.Name);
-            }
+            using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            // payload:
+            //   { "data": [ {
+            //                "id": "1234", (etc)
+            //               }
+            //             ] 
+            //    }
+            JsonElement userData = payload.RootElement.GetProperty("data")[0];
+            var context = new OAuthCreatingTicketContext(new ClaimsPrincipal(identity), properties, Context, Scheme, Options, Backchannel, tokens, userData);
+            context.RunClaimActions();
+            await Events.CreatingTicket(context);
+            return new AuthenticationTicket(context.Principal, context.Properties, Scheme.Name);
         }
     }
 }
